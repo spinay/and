@@ -1,0 +1,124 @@
+{
+  "version": "2026-04-08T05:08:31.735Z",
+  "count": 5,
+  "ipos": [
+    {
+      "canonical_key": "2026-03-31_케이푸드",
+      "company_name": "케이푸드",
+      "sector": "식품/외식",
+      "business_summary": "K-푸드 글로벌 수출 전문기업. 18개국 수출.",
+      "demand_start": "2026-03-24",
+      "demand_end": "2026-03-25",
+      "subscription_start": "2026-03-31",
+      "subscription_end": "2026-04-01",
+      "refund_date": "2026-04-03",
+      "listing_date": "2026-04-07",
+      "price_band_low": 9000,
+      "price_band_high": 11000,
+      "confirmed_price": 10500,
+      "min_subscription_qty": 10,
+      "deposit_ratio": 0.5,
+      "underwriters": [
+        "키움증권",
+        "신한투자증권"
+      ],
+      "status": "listed",
+      "competition_rate": 567.2,
+      "dart_corp_code": null
+    },
+    {
+      "canonical_key": "2026-04-07_그린에너지솔루션",
+      "company_name": "그린에너지솔루션",
+      "sector": "에너지/친환경",
+      "business_summary": "태양광 모듈 및 ESS 설계/시공 전문기업. 공공기관 납품 실적 보유.",
+      "demand_start": "2026-04-02",
+      "demand_end": "2026-04-03",
+      "subscription_start": "2026-04-07",
+      "subscription_end": "2026-04-08",
+      "refund_date": "2026-04-10",
+      "listing_date": "2026-04-14",
+      "price_band_low": 5000,
+      "price_band_high": 6000,
+      "confirmed_price": 5500,
+      "min_subscription_qty": 10,
+      "deposit_ratio": 0.5,
+      "underwriters": [
+        "삼성증권",
+        "KB증권"
+      ],
+      "status": "subscribing",
+      "competition_rate": 1203.7,
+      "dart_corp_code": null
+    },
+    {
+      "canonical_key": "2026-04-14_클라우드원",
+      "company_name": "클라우드원",
+      "sector": "IT/소프트웨어",
+      "business_summary": "기업용 SaaS 솔루션 전문기업. 국내 중소기업 ERP 시장 점유율 3위.",
+      "demand_start": "2026-04-07",
+      "demand_end": "2026-04-08",
+      "subscription_start": "2026-04-14",
+      "subscription_end": "2026-04-15",
+      "refund_date": "2026-04-17",
+      "listing_date": "2026-04-21",
+      "price_band_low": 12000,
+      "price_band_high": 14000,
+      "confirmed_price": 13500,
+      "min_subscription_qty": 10,
+      "deposit_ratio": 0.5,
+      "underwriters": [
+        "미래에셋증권",
+        "NH투자증권"
+      ],
+      "status": "subscribing",
+      "competition_rate": 892.3,
+      "dart_corp_code": null
+    },
+    {
+      "canonical_key": "2026-04-16_바이오넥스트",
+      "company_name": "바이오넥스트",
+      "sector": "바이오/제약",
+      "business_summary": "항암제 신약 개발 전문 바이오텍. 파이프라인 4종 임상 진행 중.",
+      "demand_start": "2026-04-09",
+      "demand_end": "2026-04-10",
+      "subscription_start": "2026-04-16",
+      "subscription_end": "2026-04-17",
+      "refund_date": "2026-04-21",
+      "listing_date": "2026-04-23",
+      "price_band_low": 8000,
+      "price_band_high": 10000,
+      "confirmed_price": null,
+      "min_subscription_qty": 20,
+      "deposit_ratio": 0.5,
+      "underwriters": [
+        "한국투자증권"
+      ],
+      "status": "forecasting",
+      "competition_rate": null,
+      "dart_corp_code": null
+    },
+    {
+      "canonical_key": "2026-04-21_스마트물류",
+      "company_name": "스마트물류",
+      "sector": "물류/유통",
+      "business_summary": "풀필먼트 센터 운영 및 라스트마일 배송 플랫폼. 전국 15개 센터 보유.",
+      "demand_start": "2026-04-14",
+      "demand_end": "2026-04-15",
+      "subscription_start": "2026-04-21",
+      "subscription_end": "2026-04-22",
+      "refund_date": "2026-04-24",
+      "listing_date": "2026-04-28",
+      "price_band_low": 18000,
+      "price_band_high": 22000,
+      "confirmed_price": null,
+      "min_subscription_qty": 5,
+      "deposit_ratio": 0.5,
+      "underwriters": [
+        "대신증권"
+      ],
+      "status": "upcoming",
+      "competition_rate": null,
+      "dart_corp_code": null
+    }
+  ]
+}

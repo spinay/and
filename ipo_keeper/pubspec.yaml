@@ -1,0 +1,59 @@
+name: ipo_keeper
+description: "공모주 청약 생애주기 관리 앱"
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.11.4
+
+dependencies:
+  flutter:
+    sdk: flutter
+  cupertino_icons: ^1.0.8
+
+  # 상태관리
+  flutter_riverpod: ^2.6.1
+  riverpod_annotation: ^2.6.1
+
+  # 로컬 DB
+  drift: ^2.23.1
+  drift_flutter: ^0.2.4
+  sqlite3_flutter_libs: ^0.5.28
+
+  # 라우팅
+  go_router: ^15.1.2
+
+  # 알림
+  flutter_local_notifications: ^18.0.1
+  timezone: ^0.9.4
+
+  # 네트워크
+  dio: ^5.8.0+1
+  supabase_flutter: ^2.9.0
+
+  # UI
+  table_calendar: ^3.1.3
+  fl_chart: ^0.70.2
+  intl: ^0.20.2
+
+  # 유틸
+  shared_preferences: ^2.5.3
+  path_provider: ^2.1.5
+  freezed_annotation: ^2.4.4
+  json_annotation: ^4.9.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+  build_runner: ^2.4.15
+  drift_dev: ^2.23.1
+  riverpod_generator: ^2.6.3
+  freezed: ^2.5.7
+  json_serializable: ^6.9.4
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/images/
+    - assets/icons/
