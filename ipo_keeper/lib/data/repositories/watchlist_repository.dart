@@ -1,7 +1,11 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 class WatchlistRepository extends StateNotifier<Set<String>> {
-  WatchlistRepository() : super({'ipo_2026_001', 'ipo_2026_002'});
+  WatchlistRepository()
+      : super({
+          '2026-04-14_클라우드원',
+          '2026-04-16_바이오넥스트',
+        });
 
   void toggle(String ipoId) {
     if (state.contains(ipoId)) {

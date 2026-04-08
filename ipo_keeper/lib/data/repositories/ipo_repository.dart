@@ -1,36 +1,47 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../datasources/local/dummy_data.dart';
 import '../models/ipo.dart';
+import 'catalog_repository.dart';
 
+/// IPO 데이터 조회 진입점.
+///
+/// [CatalogRepository]의 메모리 캐시를 sync하게 노출한다. 화면 코드는
+/// 이 클래스만 알면 되고, 데이터 출처(JSON/네트워크/캐시)는 신경 쓰지 않는다.
 class IPORepository {
-  // MVP: 더미 데이터 사용. 이후 Supabase 연동으로 교체
-  List<IPO> getAll() => dummyIPOs;
+  IPORepository(this._catalog);
+
+  final CatalogRepository _catalog;
+
+  List<IPO> getAll() => _catalog.cache;
 
   IPO? getById(String id) {
-    try {
-      return dummyIPOs.firstWhere((e) => e.id == id);
-    } catch (_) {
-      return null;
+    for (final ipo in _catalog.cache) {
+      if (ipo.id == id) return ipo;
     }
+    return null;
   }
 
   List<IPO> getByStatus(IPOStatus status) =>
-      dummyIPOs.where((e) => e.status == status).toList();
+      _catalog.cache.where((e) => e.status == status).toList();
 
   List<IPO> getTodayEvents(DateTime date) {
-    return dummyIPOs.where((ipo) {
-      final sub = ipo.subscriptionStart;
-      final end = ipo.subscriptionEnd;
-      final ref = ipo.refundDate;
-      final lst = ipo.listingDate;
-      bool sameDay(DateTime? d) =>
-          d != null && d.year == date.year && d.month == date.month && d.day == date.day;
-      return sameDay(sub) || sameDay(end) || sameDay(ref) || sameDay(lst);
+    bool sameDay(DateTime? d) =>
+        d != null &&
+        d.year == date.year &&
+        d.month == date.month &&
+        d.day == date.day;
+
+    return _catalog.cache.where((ipo) {
+      return sameDay(ipo.subscriptionStart) ||
+          sameDay(ipo.subscriptionEnd) ||
+          sameDay(ipo.refundDate) ||
+          sameDay(ipo.listingDate);
     }).toList();
   }
 }
 
-final ipoRepositoryProvider = Provider<IPORepository>((ref) => IPORepository());
+final ipoRepositoryProvider = Provider<IPORepository>((ref) {
+  return IPORepository(ref.watch(catalogRepositoryProvider));
+});
 
 final ipoListProvider = Provider<List<IPO>>((ref) {
   return ref.watch(ipoRepositoryProvider).getAll();

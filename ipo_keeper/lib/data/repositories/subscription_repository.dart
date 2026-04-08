@@ -5,8 +5,6 @@ class SubscriptionRepository extends StateNotifier<List<Subscription>> {
   SubscriptionRepository() : super(_dummySubscriptions);
 
   void add(Subscription subscription) {
-    state = [...state, subscription.copyWith()..toString()].cast<Subscription>();
-    // 실제로는 아래처럼
     state = [...state, subscription];
   }
 
@@ -29,11 +27,11 @@ class SubscriptionRepository extends StateNotifier<List<Subscription>> {
       .fold(0, (sum, s) => sum + s.profitAmount!);
 }
 
-// 더미 청약 기록
+// 더미 청약 기록 (다음 단계에서 Drift DB로 교체 예정)
 final _dummySubscriptions = <Subscription>[
   Subscription(
     id: 1,
-    ipoId: 'ipo_2026_003',
+    ipoId: '2026-04-07_그린에너지솔루션',
     ipoName: '그린에너지솔루션',
     broker: '미래에셋증권',
     appliedQty: 20,
@@ -45,7 +43,7 @@ final _dummySubscriptions = <Subscription>[
   ),
   Subscription(
     id: 2,
-    ipoId: 'ipo_2026_001',
+    ipoId: '2026-04-14_클라우드원',
     ipoName: '클라우드원',
     broker: 'NH투자증권',
     appliedQty: 10,

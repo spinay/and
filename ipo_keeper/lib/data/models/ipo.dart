@@ -9,7 +9,21 @@ enum IPOStatus {
   closed,          // 종료
 }
 
+extension IPOStatusJson on IPOStatus {
+  String get jsonValue => name;
+
+  static IPOStatus fromJson(String? raw) {
+    if (raw == null) return IPOStatus.upcoming;
+    for (final s in IPOStatus.values) {
+      if (s.name == raw) return s;
+    }
+    return IPOStatus.upcoming;
+  }
+}
+
 class IPO {
+  /// canonical_key. 형식: 'YYYY-MM-DD_종목명'
+  /// 청약 기록과 영구적으로 연결되는 키. JSON 갱신 후에도 안정적.
   final String id;
   final String companyName;
   final String sector;
@@ -80,5 +94,56 @@ class IPO {
       return '${CurrencyUtils.format(priceBandLow!)} ~ ${CurrencyUtils.format(priceBandHigh!)}';
     }
     return '미정';
+  }
+
+  /// data-pipeline이 만든 JSON에서 IPO를 만든다.
+  /// JSON은 snake_case, Dart는 camelCase.
+  factory IPO.fromJson(Map<String, dynamic> json) {
+    DateTime? parseDate(Object? v) {
+      if (v == null) return null;
+      if (v is! String || v.isEmpty) return null;
+      return DateTime.tryParse(v);
+    }
+
+    int? parseInt(Object? v) {
+      if (v == null) return null;
+      if (v is int) return v;
+      if (v is num) return v.toInt();
+      if (v is String) return int.tryParse(v);
+      return null;
+    }
+
+    double? parseDouble(Object? v) {
+      if (v == null) return null;
+      if (v is num) return v.toDouble();
+      if (v is String) return double.tryParse(v);
+      return null;
+    }
+
+    List<String> parseUnderwriters(Object? v) {
+      if (v is List) return v.map((e) => e.toString()).toList();
+      return const [];
+    }
+
+    return IPO(
+      id: json['canonical_key'] as String,
+      companyName: json['company_name'] as String,
+      sector: (json['sector'] as String?) ?? '',
+      businessSummary: (json['business_summary'] as String?) ?? '',
+      demandForecastStart: parseDate(json['demand_start']),
+      demandForecastEnd: parseDate(json['demand_end']),
+      subscriptionStart: parseDate(json['subscription_start']),
+      subscriptionEnd: parseDate(json['subscription_end']),
+      refundDate: parseDate(json['refund_date']),
+      listingDate: parseDate(json['listing_date']),
+      priceBandLow: parseInt(json['price_band_low']),
+      priceBandHigh: parseInt(json['price_band_high']),
+      confirmedPrice: parseInt(json['confirmed_price']),
+      minSubscriptionQty: parseInt(json['min_subscription_qty']) ?? 10,
+      depositRatio: parseDouble(json['deposit_ratio']) ?? 0.5,
+      competitionRate: parseDouble(json['competition_rate']),
+      leadUnderwriters: parseUnderwriters(json['underwriters']),
+      status: IPOStatusJson.fromJson(json['status'] as String?),
+    );
   }
 }
