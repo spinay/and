@@ -25,7 +25,7 @@ class IPODetailScreen extends ConsumerWidget {
         title: Text(ipo.companyName),
         actions: [
           IconButton(
-            onPressed: () => ref.read(watchlistProvider.notifier).toggle(ipoId),
+            onPressed: () => ref.read(watchlistRepositoryProvider).toggle(ipoId),
             icon: Icon(
               isWatched ? Icons.star : Icons.star_outline,
               color: isWatched ? const Color(0xFFF59E0B) : AppColors.textSecondary,
@@ -277,7 +277,7 @@ class _BottomCTA extends StatelessWidget {
           children: [
             Expanded(
               child: OutlinedButton(
-                onPressed: () => ref.read(watchlistProvider.notifier).toggle(ipo.id),
+                onPressed: () => ref.read(watchlistRepositoryProvider).toggle(ipo.id),
                 style: OutlinedButton.styleFrom(
                   side: const BorderSide(color: AppColors.primary),
                   padding: const EdgeInsets.symmetric(vertical: 14),

@@ -1,28 +1,48 @@
+import 'dart:async';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-class WatchlistRepository extends StateNotifier<Set<String>> {
-  WatchlistRepository()
-      : super({
-          '2026-04-14_클라우드원',
-          '2026-04-16_바이오넥스트',
-        });
+import '../local/personal_db.dart';
+import 'personal_db_provider.dart';
 
-  void toggle(String ipoId) {
-    if (state.contains(ipoId)) {
-      state = {...state}..remove(ipoId);
+/// 관심종목 저장소 (Drift 기반).
+///
+/// 기존의 StateNotifier 인터페이스는 더 이상 아니지만, 화면 코드가 보는
+/// provider 이름([watchlistProvider], [isWatchedProvider])은 그대로 유지된다.
+class WatchlistRepository {
+  WatchlistRepository(this._db);
+
+  final PersonalDb _db;
+
+  Stream<Set<String>> watch() => _db.watchWatchlist();
+
+  Future<void> toggle(String ipoId) async {
+    final current = await _db.getWatchlist();
+    if (current.contains(ipoId)) {
+      await _db.removeWatch(ipoId);
     } else {
-      state = {...state, ipoId};
+      await _db.addWatch(ipoId);
     }
   }
 
-  bool isWatched(String ipoId) => state.contains(ipoId);
+  Future<void> add(String ipoId) => _db.addWatch(ipoId);
+  Future<void> remove(String ipoId) => _db.removeWatch(ipoId);
 }
 
-final watchlistProvider =
-    StateNotifierProvider<WatchlistRepository, Set<String>>(
-  (ref) => WatchlistRepository(),
-);
+final watchlistRepositoryProvider = Provider<WatchlistRepository>((ref) {
+  return WatchlistRepository(ref.watch(personalDbProvider));
+});
 
+/// 관심종목 set을 스트림으로 노출. Drift 변경 시 자동 재빌드.
+final watchlistProvider = StreamProvider<Set<String>>((ref) {
+  return ref.watch(watchlistRepositoryProvider).watch();
+});
+
+/// 특정 IPO가 관심종목인지. 화면에서 family로 사용.
 final isWatchedProvider = Provider.family<bool, String>((ref, ipoId) {
-  return ref.watch(watchlistProvider).contains(ipoId);
+  final async = ref.watch(watchlistProvider);
+  return async.maybeWhen(
+    data: (set) => set.contains(ipoId),
+    orElse: () => false,
+  );
 });

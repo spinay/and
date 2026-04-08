@@ -12,7 +12,8 @@ class ProfitScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final subs = ref.watch(subscriptionRepositoryProvider);
+    final subs =
+        ref.watch(subscriptionListProvider).valueOrNull ?? const <Subscription>[];
     final sold = subs.where((s) => s.status == SubscriptionStatus.sold).toList();
     final totalProfit = sold.fold(0, (sum, s) => sum + (s.profitAmount ?? 0));
     final totalCount = subs.length;

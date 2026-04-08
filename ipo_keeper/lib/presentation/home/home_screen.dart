@@ -17,7 +17,8 @@ class HomeScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final today = DateTime.now();
     final ipos = ref.watch(ipoListProvider);
-    final subscriptions = ref.watch(subscriptionRepositoryProvider);
+    final subscriptions =
+        ref.watch(subscriptionListProvider).valueOrNull ?? const <Subscription>[];
     final todayEvents = _getTodayActions(ipos, subscriptions, today);
 
     return Scaffold(

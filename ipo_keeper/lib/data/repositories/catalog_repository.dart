@@ -16,9 +16,12 @@ import '../models/ipo.dart';
 /// - 네트워크 실패 시 캐시 폴백, 캐시도 없으면 assets 번들 폴백
 /// - 사용자 데이터(청약기록·즐겨찾기)와는 무관 (그쪽은 personal DB)
 ///
+/// [StateNotifier]로 노출해 state가 바뀌면 화면이 자동 재빌드된다.
 /// 화면은 이 저장소를 직접 보지 않고 [IPORepository]를 통해서만 접근한다.
-class CatalogRepository {
-  CatalogRepository({Dio? dio}) : _dio = dio ?? Dio();
+class CatalogRepository extends StateNotifier<List<IPO>> {
+  CatalogRepository({Dio? dio})
+      : _dio = dio ?? Dio(),
+        super(const []);
 
   static const String remoteUrl =
       'https://raw.githubusercontent.com/spinay/and/main/data-pipeline/data/ipos.json';
@@ -26,12 +29,10 @@ class CatalogRepository {
   static const String _assetPath = 'assets/data/ipos.json';
 
   final Dio _dio;
-
-  /// 현재 메모리에 들고 있는 캐시. 화면이 보는 단일 진실 소스.
-  List<IPO> _cache = const [];
   String? _version;
 
-  List<IPO> get cache => _cache;
+  /// 읽기 전용 접근자. 화면 코드는 [ipoListProvider] 쪽을 watch하면 된다.
+  List<IPO> get cache => state;
   String? get version => _version;
 
   /// 앱 시작 시 1회 호출. 캐시 → assets 폴백 순서로 즉시 데이터를 만든다.
@@ -100,7 +101,7 @@ class CatalogRepository {
 
   /// 캐시 무효화 (테스트/디버그용)
   Future<void> clearCache() async {
-    _cache = const [];
+    state = const [];
     _version = null;
     try {
       final prefs = await SharedPreferences.getInstance();
@@ -111,7 +112,7 @@ class CatalogRepository {
   // ─── private ──────────────────────────────────────────────
 
   void _apply(_CatalogPayload payload) {
-    _cache = payload.ipos;
+    state = payload.ipos;
     _version = payload.version;
   }
 
@@ -146,6 +147,9 @@ class _CatalogPayload {
   _CatalogPayload({required this.version, required this.ipos});
 }
 
-/// 앱 전역에서 공유하는 단일 인스턴스
+/// 앱 전역에서 공유하는 단일 인스턴스.
+/// state가 바뀌면 이걸 watch하는 모든 화면이 자동 갱신된다.
 final catalogRepositoryProvider =
-    Provider<CatalogRepository>((ref) => CatalogRepository());
+    StateNotifierProvider<CatalogRepository, List<IPO>>(
+  (ref) => CatalogRepository(),
+);

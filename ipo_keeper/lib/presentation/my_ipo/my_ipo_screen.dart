@@ -30,7 +30,8 @@ class _MyIPOScreenState extends ConsumerState<MyIPOScreen> with SingleTickerProv
 
   @override
   Widget build(BuildContext context) {
-    final all = ref.watch(subscriptionRepositoryProvider);
+    final all =
+        ref.watch(subscriptionListProvider).valueOrNull ?? const <Subscription>[];
     final active = all.where((s) => s.status != SubscriptionStatus.sold).toList();
     final done = all.where((s) => s.status == SubscriptionStatus.sold).toList();
 

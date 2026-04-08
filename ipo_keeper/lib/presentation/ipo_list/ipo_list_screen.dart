@@ -115,7 +115,7 @@ class _IPOCard extends ConsumerWidget {
                 _StatusBadge(ipo: ipo),
                 const SizedBox(width: 8),
                 GestureDetector(
-                  onTap: () => ref.read(watchlistProvider.notifier).toggle(ipo.id),
+                  onTap: () => ref.read(watchlistRepositoryProvider).toggle(ipo.id),
                   child: Icon(
                     isWatched ? Icons.star : Icons.star_outline,
                     color: isWatched ? const Color(0xFFF59E0B) : AppColors.textTertiary,

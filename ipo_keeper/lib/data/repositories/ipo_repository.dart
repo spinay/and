@@ -4,24 +4,24 @@ import 'catalog_repository.dart';
 
 /// IPO 데이터 조회 진입점.
 ///
-/// [CatalogRepository]의 메모리 캐시를 sync하게 노출한다. 화면 코드는
-/// 이 클래스만 알면 되고, 데이터 출처(JSON/네트워크/캐시)는 신경 쓰지 않는다.
+/// [CatalogRepository]의 state(`List<IPO>`)를 받아 화면이 쓰기 좋은 형태로
+/// 노출한다. catalog가 갱신되면 이 provider들도 자동으로 다시 계산된다.
 class IPORepository {
-  IPORepository(this._catalog);
+  IPORepository(this._all);
 
-  final CatalogRepository _catalog;
+  final List<IPO> _all;
 
-  List<IPO> getAll() => _catalog.cache;
+  List<IPO> getAll() => _all;
 
   IPO? getById(String id) {
-    for (final ipo in _catalog.cache) {
+    for (final ipo in _all) {
       if (ipo.id == id) return ipo;
     }
     return null;
   }
 
   List<IPO> getByStatus(IPOStatus status) =>
-      _catalog.cache.where((e) => e.status == status).toList();
+      _all.where((e) => e.status == status).toList();
 
   List<IPO> getTodayEvents(DateTime date) {
     bool sameDay(DateTime? d) =>
@@ -30,7 +30,7 @@ class IPORepository {
         d.month == date.month &&
         d.day == date.day;
 
-    return _catalog.cache.where((ipo) {
+    return _all.where((ipo) {
       return sameDay(ipo.subscriptionStart) ||
           sameDay(ipo.subscriptionEnd) ||
           sameDay(ipo.refundDate) ||
@@ -40,7 +40,8 @@ class IPORepository {
 }
 
 final ipoRepositoryProvider = Provider<IPORepository>((ref) {
-  return IPORepository(ref.watch(catalogRepositoryProvider));
+  final all = ref.watch(catalogRepositoryProvider);
+  return IPORepository(all);
 });
 
 final ipoListProvider = Provider<List<IPO>>((ref) {
