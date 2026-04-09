@@ -1,34 +1,38 @@
 # IPO Keeper — Data Pipeline (Phase 0)
 
-공모주 알리미 앱의 데이터 파이프라인. **백엔드/크롤러 없이** Google Sheet → CSV → JSON으로 운영합니다.
+공모주 알리미 앱의 데이터 파이프라인. **백엔드/크롤러 없이** Google Sheet → JSON으로 운영합니다.
 
 ## 구성
 
 ```
 data-pipeline/
-├── seed/ipos.csv           ← 운영자가 매일 갱신하는 입력
+├── seed/ipos-sheet.csv     ← 시트 raw 백업 (build 시 자동 덮어씀)
 ├── scripts/
-│   ├── build.mjs           ← CSV → JSON 변환
+│   ├── build.mjs           ← Sheet fetch → JSON 변환
 │   └── validate.mjs        ← 결과 JSON 검증
 ├── data/ipos.json          ← 빌드 결과물 (앱이 fetch)
 ├── docs/
 │   ├── SHEET_SCHEMA.md     ← 운영자용 스키마 명세
 │   └── JSON_SCHEMA.md      ← 클라이언트용 JSON 명세
 ├── .github/workflows/
-│   └── build.yml           ← push 시 자동 빌드 + 커밋
+│   └── build.yml           ← cron(매일 KST 09시) + 수동 + scripts push 시 빌드
 └── package.json
 ```
 
 ## 운영 흐름
 
-1. Google Sheet 편집 (또는 직접 `seed/ipos.csv` 편집)
-2. Sheet → CSV 다운로드 → `seed/ipos.csv`로 덮어쓰기
-3. `git commit && git push`
-4. GitHub Action이 자동으로:
+1. Google Sheet 편집 (회사명/공모가/청약일/환불일/상장일/수요예측일/주관사/...)
+2. 다음 중 하나로 빌드 트리거:
+   - 자동: 매일 KST 09:00에 cron이 시트 fetch
+   - 수동: GitHub Actions → "Build IPO data" → Run workflow
+3. Action이 자동으로:
+   - 시트 CSV fetch (`seed/ipos-sheet.csv`로 백업)
    - JSON 빌드 (`data/ipos.json`)
    - 검증
    - 결과 commit
-5. Flutter 앱이 raw URL에서 fetch
+4. Flutter 앱이 raw URL에서 fetch
+
+> 시트 URL은 `scripts/build.mjs`의 `DEFAULT_SHEET_URL` 또는 `SHEET_CSV_URL` 환경변수.
 
 ## 로컬 개발
 
