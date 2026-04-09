@@ -2,6 +2,7 @@ import 'package:drift/drift.dart' show Value;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../local/personal_db.dart';
+import '../models/ipo.dart';
 import '../models/subscription.dart';
 import 'personal_db_provider.dart';
 
@@ -33,6 +34,58 @@ class SubscriptionRepository {
   }
 
   Future<void> delete(int id) => _db.deleteSubscription(id);
+
+  /// 날짜 기반 상태 자동 전이.
+  ///
+  /// catalog에서 해당 IPO의 환불일/상장일을 가져와 오늘 날짜와 비교한다.
+  /// - 환불일 지남 + applied/allocated → refunded
+  /// - 상장일 지남 + refunded → listed
+  ///
+  /// 반환값: 상태가 바뀐 건수.
+  Future<int> autoTransition({
+    required List<IPO> catalog,
+    DateTime? now,
+  }) async {
+    final today = now ?? DateTime.now();
+    final subs = await _db.watchSubscriptions().first;
+    var changed = 0;
+
+    for (final row in subs) {
+      IPO? ipo;
+      for (final e in catalog) {
+        if (e.id == row.ipoId) {
+          ipo = e;
+          break;
+        }
+      }
+      if (ipo == null) continue;
+
+      final current = _parseStatus(row.status);
+      SubscriptionStatus? next;
+
+      // applied/allocated → refunded (환불일 이후)
+      if (current.index <= SubscriptionStatus.allocated.index &&
+          ipo.refundDate != null &&
+          !ipo.refundDate!.isAfter(today)) {
+        next = SubscriptionStatus.refunded;
+      }
+
+      // refunded → listed (상장일 이후)
+      if ((next ?? current) == SubscriptionStatus.refunded &&
+          ipo.listingDate != null &&
+          !ipo.listingDate!.isAfter(today)) {
+        next = SubscriptionStatus.listed;
+      }
+
+      if (next != null && next != current) {
+        final updated = row.copyWith(status: next.name);
+        await _db.updateSubscription(updated);
+        changed++;
+      }
+    }
+
+    return changed;
+  }
 
   // ─── mappers ─────────────────────────────────────────────
 

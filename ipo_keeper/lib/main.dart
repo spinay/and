@@ -26,6 +26,10 @@ Future<void> main() async {
   final personalDb = PersonalDb();
   await _seedIfEmpty(personalDb);
 
+  // 3. 날짜 기반 상태 자동 전이 (환불일/상장일이 지났으면 상태 승격)
+  final subsRepo = SubscriptionRepository(personalDb);
+  await subsRepo.autoTransition(catalog: catalog.cache);
+
   runApp(
     ProviderScope(
       overrides: [
