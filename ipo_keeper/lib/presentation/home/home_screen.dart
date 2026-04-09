@@ -169,6 +169,26 @@ class _TodayAction {
       case _ActionType.listing: return '매도 기록하기';
     }
   }
+
+  /// CTA가 눌렸을 때 이동할 경로.
+  String get ctaRoute {
+    switch (type) {
+      case _ActionType.subscriptionStart:
+        return '/subscription/new?ipoId=${Uri.encodeComponent(ipo.id)}';
+      case _ActionType.subscriptionEnd:
+        return '/detail/${ipo.id}';
+      case _ActionType.refund:
+        final id = sub?.id;
+        return id != null
+            ? '/subscription/edit/$id?focus=allocation'
+            : '/detail/${ipo.id}';
+      case _ActionType.listing:
+        final id = sub?.id;
+        return id != null
+            ? '/subscription/edit/$id?focus=sale'
+            : '/detail/${ipo.id}';
+    }
+  }
 }
 
 class _ActionCard extends ConsumerWidget {
@@ -216,7 +236,7 @@ class _ActionCard extends ConsumerWidget {
             ),
           ),
           TextButton(
-            onPressed: () => context.push('/detail/${action.ipo.id}'),
+            onPressed: () => context.push(action.ctaRoute),
             child: Text(action.ctaLabel, style: TextStyle(color: action.color, fontWeight: FontWeight.w600, fontSize: 13)),
           ),
         ],

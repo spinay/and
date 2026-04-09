@@ -6,6 +6,7 @@ import '../../presentation/my_ipo/my_ipo_screen.dart';
 import '../../presentation/calendar/calendar_screen.dart';
 import '../../presentation/profit/profit_screen.dart';
 import '../../presentation/settings/settings_screen.dart';
+import '../../presentation/subscription_form/subscription_form_screen.dart';
 import '../shell/main_shell.dart';
 
 final appRouter = GoRouter(
@@ -26,6 +27,33 @@ final appRouter = GoRouter(
       builder: (ctx, state) =>
           IPODetailScreen(ipoId: state.pathParameters['id']!),
     ),
+    // 신규 청약 기록 추가. 선택적으로 ?ipoId=... 로 종목 프리픽스 가능.
+    GoRoute(
+      path: '/subscription/new',
+      builder: (ctx, state) => SubscriptionFormScreen(
+        initialIpoId: state.uri.queryParameters['ipoId'],
+      ),
+    ),
+    // 수정. ?focus=allocation|sale 로 진입 섹션 지정 가능.
+    GoRoute(
+      path: '/subscription/edit/:id',
+      builder: (ctx, state) => SubscriptionFormScreen(
+        editingId: int.parse(state.pathParameters['id']!),
+        initialFocus:
+            _parseFocus(state.uri.queryParameters['focus']),
+      ),
+    ),
     GoRoute(path: '/settings', builder: (ctx, _) => const SettingsScreen()),
   ],
 );
+
+SubscriptionFormFocus _parseFocus(String? raw) {
+  switch (raw) {
+    case 'allocation':
+      return SubscriptionFormFocus.allocation;
+    case 'sale':
+      return SubscriptionFormFocus.sale;
+    default:
+      return SubscriptionFormFocus.basic;
+  }
+}

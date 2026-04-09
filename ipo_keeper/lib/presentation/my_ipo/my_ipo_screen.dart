@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_text_styles.dart';
 import '../../core/utils/currency_utils.dart';
@@ -47,9 +48,7 @@ class _MyIPOScreenState extends ConsumerState<MyIPOScreen> with SingleTickerProv
         ),
       ),
       floatingActionButton: FloatingActionButton.extended(
-        onPressed: () {
-          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('청약 추가 기능 준비 중')));
-        },
+        onPressed: () => context.push('/subscription/new'),
         backgroundColor: AppColors.primary,
         icon: const Icon(Icons.add, color: Colors.white),
         label: const Text('청약 추가', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600)),
@@ -86,6 +85,12 @@ class _SubscriptionCard extends StatelessWidget {
   final Subscription sub;
   const _SubscriptionCard({required this.sub});
 
+  void _openEdit(BuildContext context) {
+    final id = sub.id;
+    if (id == null) return;
+    context.push('/subscription/edit/$id');
+  }
+
   Color get _statusColor {
     switch (sub.status) {
       case SubscriptionStatus.applied: return AppColors.applied;
@@ -98,7 +103,9 @@ class _SubscriptionCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    return GestureDetector(
+      onTap: () => _openEdit(context),
+      child: Container(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -158,6 +165,7 @@ class _SubscriptionCard extends StatelessWidget {
             ),
           ),
         ],
+      ),
       ),
     );
   }
