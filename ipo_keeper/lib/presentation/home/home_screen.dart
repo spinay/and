@@ -115,6 +115,9 @@ class HomeScreen extends ConsumerWidget {
     bool same(DateTime? d) => d != null && AppDateUtils.isSameDay(d, today);
 
     for (final ipo in ipos) {
+      if (same(ipo.demandForecastStart)) {
+        actions.add(_TodayAction(ipo: ipo, type: _ActionType.demandForecast));
+      }
       if (same(ipo.subscriptionStart)) {
         actions.add(_TodayAction(ipo: ipo, type: _ActionType.subscriptionStart));
       }
@@ -123,7 +126,15 @@ class HomeScreen extends ConsumerWidget {
       }
     }
     for (final sub in subs) {
-      final ipo = ipos.firstWhere((i) => i.id == sub.ipoId, orElse: () => ipos.first);
+      // catalog에 없는 고아 청약 기록은 skip (절대 ipos.first로 fallback하지 않는다)
+      IPO? ipo;
+      for (final i in ipos) {
+        if (i.id == sub.ipoId) {
+          ipo = i;
+          break;
+        }
+      }
+      if (ipo == null) continue;
       if (same(ipo.refundDate)) {
         actions.add(_TodayAction(ipo: ipo, type: _ActionType.refund, sub: sub));
       }
@@ -135,7 +146,7 @@ class HomeScreen extends ConsumerWidget {
   }
 }
 
-enum _ActionType { subscriptionStart, subscriptionEnd, refund, listing }
+enum _ActionType { demandForecast, subscriptionStart, subscriptionEnd, refund, listing }
 
 class _TodayAction {
   final IPO ipo;
@@ -145,6 +156,7 @@ class _TodayAction {
 
   String get title {
     switch (type) {
+      case _ActionType.demandForecast: return '수요예측 시작';
       case _ActionType.subscriptionStart: return '청약 시작';
       case _ActionType.subscriptionEnd: return '청약 마감';
       case _ActionType.refund: return '환불일';
@@ -154,6 +166,7 @@ class _TodayAction {
 
   Color get color {
     switch (type) {
+      case _ActionType.demandForecast: return AppColors.forecast;
       case _ActionType.subscriptionStart:
       case _ActionType.subscriptionEnd: return AppColors.subscription;
       case _ActionType.refund: return AppColors.refund;
@@ -163,6 +176,7 @@ class _TodayAction {
 
   String get ctaLabel {
     switch (type) {
+      case _ActionType.demandForecast: return '상세 보기';
       case _ActionType.subscriptionStart: return '청약하러 가기';
       case _ActionType.subscriptionEnd: return '청약 마감 확인';
       case _ActionType.refund: return '환불금 기록하기';
@@ -173,6 +187,8 @@ class _TodayAction {
   /// CTA가 눌렸을 때 이동할 경로.
   String get ctaRoute {
     switch (type) {
+      case _ActionType.demandForecast:
+        return '/detail/${ipo.id}';
       case _ActionType.subscriptionStart:
         return '/subscription/new?ipoId=${Uri.encodeComponent(ipo.id)}';
       case _ActionType.subscriptionEnd:
@@ -262,7 +278,8 @@ class _WeekPreview extends StatelessWidget {
           final date = today.add(Duration(days: i));
           final hasEvent = ipos.any((ipo) {
             bool same(DateTime? d) => d != null && AppDateUtils.isSameDay(d, date);
-            return same(ipo.subscriptionStart) || same(ipo.subscriptionEnd) ||
+            return same(ipo.demandForecastStart) ||
+                same(ipo.subscriptionStart) || same(ipo.subscriptionEnd) ||
                 same(ipo.refundDate) || same(ipo.listingDate);
           });
           final isToday = i == 0;

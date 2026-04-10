@@ -46,7 +46,10 @@ class NotificationService {
   /// 해당 IPO에 대한 알림을 스케줄한다.
   /// 과거 날짜는 자동으로 건너뛴다.
   Future<void> scheduleForIpo(IPO ipo) async {
-    final base = ipo.id.hashCode.abs();
+    // flutter_local_notifications가 요구하는 32bit 정수 범위로 제한.
+    // hashCode는 64bit까지 나올 수 있으므로 1억으로 mod.
+    // id = base * 10 + offset → 최대 1,000,000,009 < 2^31 (안전).
+    final base = ipo.id.hashCode.abs() % 100000000;
 
     // 1. 청약 시작 D-1
     if (ipo.subscriptionStart != null) {
@@ -82,7 +85,7 @@ class NotificationService {
 
   /// 해당 IPO의 알림을 모두 취소한다.
   Future<void> cancelForIpo(IPO ipo) async {
-    final base = ipo.id.hashCode.abs();
+    final base = ipo.id.hashCode.abs() % 100000000;
     await _plugin.cancel(base * 10 + 1);
     await _plugin.cancel(base * 10 + 2);
     await _plugin.cancel(base * 10 + 3);

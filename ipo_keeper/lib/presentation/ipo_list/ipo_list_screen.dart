@@ -22,7 +22,7 @@ class _IPOListScreenState extends ConsumerState<IPOListScreen> with SingleTicker
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 4, vsync: this);
+    _tabController = TabController(length: 5, vsync: this);
   }
 
   @override
@@ -34,9 +34,11 @@ class _IPOListScreenState extends ConsumerState<IPOListScreen> with SingleTicker
   @override
   Widget build(BuildContext context) {
     final ipos = ref.watch(ipoListProvider);
+    final watched = ref.watch(watchlistProvider).valueOrNull ?? const <String>{};
 
-    final tabs = {
+    final tabs = <String, List<IPO>>{
       '전체': ipos,
+      '관심': ipos.where((e) => watched.contains(e.id)).toList(),
       '청약중': ipos.where((e) => e.status == IPOStatus.subscribing).toList(),
       '청약예정': ipos.where((e) => e.status == IPOStatus.upcoming || e.status == IPOStatus.forecasting).toList(),
       '상장완료': ipos.where((e) => e.status == IPOStatus.listed || e.status == IPOStatus.closed).toList(),
@@ -47,6 +49,8 @@ class _IPOListScreenState extends ConsumerState<IPOListScreen> with SingleTicker
         title: const Text('공모주'),
         bottom: TabBar(
           controller: _tabController,
+          isScrollable: true,
+          tabAlignment: TabAlignment.start,
           tabs: tabs.keys.map((t) => Tab(text: t)).toList(),
           labelColor: AppColors.primary,
           unselectedLabelColor: AppColors.textTertiary,
@@ -56,7 +60,12 @@ class _IPOListScreenState extends ConsumerState<IPOListScreen> with SingleTicker
       ),
       body: TabBarView(
         controller: _tabController,
-        children: tabs.values.map((list) => _IPOListView(ipos: list)).toList(),
+        children: tabs.entries
+            .map((e) => _IPOListView(
+                  ipos: e.value,
+                  isWatchlistTab: e.key == '관심',
+                ))
+            .toList(),
       ),
     );
   }
@@ -64,12 +73,36 @@ class _IPOListScreenState extends ConsumerState<IPOListScreen> with SingleTicker
 
 class _IPOListView extends ConsumerWidget {
   final List<IPO> ipos;
-  const _IPOListView({required this.ipos});
+  final bool isWatchlistTab;
+  const _IPOListView({required this.ipos, this.isWatchlistTab = false});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     if (ipos.isEmpty) {
-      return const Center(child: Text('해당하는 공모주가 없어요', style: AppTextStyles.body2));
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              isWatchlistTab ? Icons.star_outline : Icons.inbox_outlined,
+              size: 48,
+              color: AppColors.textTertiary,
+            ),
+            const SizedBox(height: 12),
+            Text(
+              isWatchlistTab ? '아직 관심종목이 없어요' : '해당하는 공모주가 없어요',
+              style: AppTextStyles.body2,
+            ),
+            if (isWatchlistTab) ...[
+              const SizedBox(height: 4),
+              const Text(
+                '전체 탭에서 ⭐을 눌러 추가해보세요',
+                style: AppTextStyles.caption,
+              ),
+            ],
+          ],
+        ),
+      );
     }
     return ListView.builder(
       padding: const EdgeInsets.symmetric(vertical: 12),
