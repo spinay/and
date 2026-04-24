@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_text_styles.dart';
 import '../../core/utils/currency_utils.dart';
@@ -290,10 +291,9 @@ class _BottomCTA extends StatelessWidget {
             Expanded(
               flex: 2,
               child: ElevatedButton(
-                onPressed: () {
-                  // TODO: 청약 기록 바텀시트
-                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('청약 기록 기능 준비 중')));
-                },
+                onPressed: () => context.push(
+                  '/subscription/new?ipoId=${Uri.encodeComponent(ipo.id)}',
+                ),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.primary,
                   foregroundColor: Colors.white,

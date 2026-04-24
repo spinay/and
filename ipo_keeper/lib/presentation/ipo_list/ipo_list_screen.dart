@@ -9,6 +9,7 @@ import '../../core/utils/date_utils.dart';
 import '../../data/models/ipo.dart';
 import '../../data/repositories/ipo_repository.dart';
 import '../../data/repositories/watchlist_repository.dart';
+import '../../domain/ipo_list_sorting.dart';
 
 class IPOListScreen extends ConsumerStatefulWidget {
   const IPOListScreen({super.key});
@@ -68,7 +69,7 @@ class _IPOListTab extends ConsumerStatefulWidget {
 }
 
 class _IPOListTabState extends ConsumerState<_IPOListTab> {
-  String _filter = '전체';
+  IPOListFilter _filter = IPOListFilter.all;
   final ScrollController _scrollController = ScrollController();
   bool _didInitialScroll = false;
 
@@ -78,77 +79,30 @@ class _IPOListTabState extends ConsumerState<_IPOListTab> {
     super.dispose();
   }
 
-  bool _matches(IPO e) {
-    switch (_filter) {
-      case '청약중':
-        return e.status == IPOStatus.subscribing;
-      case '청약예정':
-        return e.status == IPOStatus.upcoming || e.status == IPOStatus.forecasting;
-      case '상장완료':
-        return e.status == IPOStatus.listed || e.status == IPOStatus.closed;
-      default:
-        return true;
-    }
-  }
-
-  /// D-day 기준 정렬. 먼 미래(위) → 가까운 미래 → 오늘 → 최근 과거 → 먼 과거(아래).
-  List<IPO> _sortByDDay(List<IPO> list) {
-    final now = DateTime.now();
-    final today = DateTime(now.year, now.month, now.day);
-
-    int dDayValue(IPO ipo) {
-      final d = ipo.subscriptionStart ?? ipo.listingDate ?? ipo.refundDate;
-      if (d == null) return -999999; // 날짜 없으면 맨 아래
-      return d.difference(today).inDays;
-    }
-
-    final sorted = List<IPO>.from(list);
-    sorted.sort((a, b) => dDayValue(b).compareTo(dDayValue(a))); // 내림차순
-    return sorted;
-  }
-
-  /// D-Day=0 (오늘) 또는 가장 가까운 미래 항목의 인덱스를 찾는다.
-  int _findClosestIndex(List<IPO> sorted) {
-    final now = DateTime.now();
-    final today = DateTime(now.year, now.month, now.day);
-    int bestIdx = 0;
-    int bestAbs = 999999;
-    for (int i = 0; i < sorted.length; i++) {
-      final d = sorted[i].subscriptionStart ?? sorted[i].listingDate ?? sorted[i].refundDate;
-      if (d == null) continue;
-      final diff = d.difference(today).inDays.abs();
-      if (diff < bestAbs) {
-        bestAbs = diff;
-        bestIdx = i;
-      }
-    }
-    return bestIdx;
-  }
-
   void _scrollToCenter(List<IPO> sorted) {
     if (_didInitialScroll || sorted.isEmpty) return;
     _didInitialScroll = true;
 
-    final idx = _findClosestIndex(sorted);
-    // 카드 높이 약 130, 위로 약간 여유
+    final idx = findClosestDDayIndex(sorted, DateTime.now());
     const cardHeight = 130.0;
     final screenHeight = MediaQuery.of(context).size.height;
-    final offset = (idx * cardHeight - screenHeight / 2 + cardHeight).clamp(0.0, double.infinity);
+    final offset = (idx * cardHeight - screenHeight / 2 + cardHeight)
+        .clamp(0.0, double.infinity);
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (_scrollController.hasClients) {
-        _scrollController.jumpTo(
-          offset.clamp(0.0, _scrollController.position.maxScrollExtent),
-        );
-      }
+      if (!mounted || !_scrollController.hasClients) return;
+      _scrollController.jumpTo(
+        offset.clamp(0.0, _scrollController.position.maxScrollExtent),
+      );
     });
   }
 
   @override
   Widget build(BuildContext context) {
     final ipos = ref.watch(ipoListProvider);
-    final filtered = _filter == '전체' ? ipos : ipos.where(_matches).toList();
-    final sorted = _sortByDDay(filtered);
+    final filtered =
+        ipos.where(_filter.matches).toList(growable: false);
+    final sorted = sortByDDay(filtered, DateTime.now());
 
     _scrollToCenter(sorted);
 
@@ -159,13 +113,13 @@ class _IPOListTabState extends ConsumerState<_IPOListTab> {
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
           child: Row(
             children: [
-              for (final label in ['전체', '청약중', '청약예정', '상장완료'])
+              for (final f in IPOListFilter.values)
                 _FilterChip(
-                  label: label,
-                  selected: _filter == label,
+                  label: f.label,
+                  selected: _filter == f,
                   onTap: () => setState(() {
-                    _filter = label;
-                    _didInitialScroll = false; // 필터 변경 시 다시 스크롤
+                    _filter = f;
+                    _didInitialScroll = false;
                   }),
                 ),
             ],

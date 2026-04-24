@@ -9,6 +9,7 @@ import '../../data/models/ipo.dart';
 import '../../data/models/subscription.dart';
 import '../../data/repositories/ipo_repository.dart';
 import '../../data/repositories/subscription_repository.dart';
+import '../../domain/today_actions.dart';
 
 class HomeScreen extends ConsumerWidget {
   const HomeScreen({super.key});
@@ -19,14 +20,19 @@ class HomeScreen extends ConsumerWidget {
     final ipos = ref.watch(ipoListProvider);
     final subscriptions =
         ref.watch(subscriptionListProvider).valueOrNull ?? const <Subscription>[];
-    final todayEvents = _getTodayActions(ipos, subscriptions, today);
+    final todayEvents = computeTodayActions(
+      ipos: ipos,
+      subscriptions: subscriptions,
+      today: today,
+    );
 
     return Scaffold(
       backgroundColor: AppColors.background,
       body: SafeArea(
         child: CustomScrollView(
           slivers: [
-            SliverToBoxAdapter(child: _buildHeader(today, todayEvents.length)),
+            SliverToBoxAdapter(
+                child: _buildHeader(context, today, todayEvents.length)),
             if (todayEvents.isNotEmpty) ...[
               SliverToBoxAdapter(child: _sectionTitle('오늘 할 일', todayEvents.length)),
               SliverList(
@@ -53,20 +59,36 @@ class HomeScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildHeader(DateTime today, int actionCount) {
+  Widget _buildHeader(BuildContext context, DateTime today, int actionCount) {
     final weekdays = ['월', '화', '수', '목', '금', '토', '일'];
     final wd = weekdays[today.weekday - 1];
     return Container(
       color: AppColors.surface,
       padding: const EdgeInsets.fromLTRB(20, 20, 20, 16),
-      child: Column(
+      child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('${today.month}월 ${today.day}일 ($wd)', style: AppTextStyles.body2),
-          const SizedBox(height: 4),
-          Text(
-            actionCount > 0 ? '오늘 해야 할 일이 $actionCount건 있어요' : '오늘은 예정된 일정이 없어요',
-            style: AppTextStyles.heading2,
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('${today.month}월 ${today.day}일 ($wd)',
+                    style: AppTextStyles.body2),
+                const SizedBox(height: 4),
+                Text(
+                  actionCount > 0
+                      ? '오늘 해야 할 일이 $actionCount건 있어요'
+                      : '오늘은 예정된 일정이 없어요',
+                  style: AppTextStyles.heading2,
+                ),
+              ],
+            ),
+          ),
+          IconButton(
+            icon: const Icon(Icons.settings_outlined,
+                color: AppColors.textSecondary),
+            tooltip: '설정',
+            onPressed: () => context.push('/settings'),
           ),
         ],
       ),
@@ -110,95 +132,53 @@ class HomeScreen extends ConsumerWidget {
     );
   }
 
-  List<_TodayAction> _getTodayActions(List<IPO> ipos, List<Subscription> subs, DateTime today) {
-    final actions = <_TodayAction>[];
-    bool same(DateTime? d) => d != null && AppDateUtils.isSameDay(d, today);
-
-    for (final ipo in ipos) {
-      if (same(ipo.demandForecastStart)) {
-        actions.add(_TodayAction(ipo: ipo, type: _ActionType.demandForecast));
-      }
-      if (same(ipo.subscriptionStart)) {
-        actions.add(_TodayAction(ipo: ipo, type: _ActionType.subscriptionStart));
-      }
-      if (same(ipo.subscriptionEnd)) {
-        actions.add(_TodayAction(ipo: ipo, type: _ActionType.subscriptionEnd));
-      }
-    }
-    for (final sub in subs) {
-      // catalog에 없는 고아 청약 기록은 skip (절대 ipos.first로 fallback하지 않는다)
-      IPO? ipo;
-      for (final i in ipos) {
-        if (i.id == sub.ipoId) {
-          ipo = i;
-          break;
-        }
-      }
-      if (ipo == null) continue;
-      if (same(ipo.refundDate)) {
-        actions.add(_TodayAction(ipo: ipo, type: _ActionType.refund, sub: sub));
-      }
-      if (same(ipo.listingDate)) {
-        actions.add(_TodayAction(ipo: ipo, type: _ActionType.listing, sub: sub));
-      }
-    }
-    return actions;
-  }
 }
 
-enum _ActionType { demandForecast, subscriptionStart, subscriptionEnd, refund, listing }
-
-class _TodayAction {
-  final IPO ipo;
-  final _ActionType type;
-  final Subscription? sub;
-  _TodayAction({required this.ipo, required this.type, this.sub});
-
+extension TodayActionView on TodayAction {
   String get title {
     switch (type) {
-      case _ActionType.demandForecast: return '수요예측 시작';
-      case _ActionType.subscriptionStart: return '청약 시작';
-      case _ActionType.subscriptionEnd: return '청약 마감';
-      case _ActionType.refund: return '환불일';
-      case _ActionType.listing: return '상장일';
+      case TodayActionType.demandForecast: return '수요예측 시작';
+      case TodayActionType.subscriptionStart: return '청약 시작';
+      case TodayActionType.subscriptionEnd: return '청약 마감';
+      case TodayActionType.refund: return '환불일';
+      case TodayActionType.listing: return '상장일';
     }
   }
 
   Color get color {
     switch (type) {
-      case _ActionType.demandForecast: return AppColors.forecast;
-      case _ActionType.subscriptionStart:
-      case _ActionType.subscriptionEnd: return AppColors.subscription;
-      case _ActionType.refund: return AppColors.refund;
-      case _ActionType.listing: return AppColors.listing;
+      case TodayActionType.demandForecast: return AppColors.forecast;
+      case TodayActionType.subscriptionStart:
+      case TodayActionType.subscriptionEnd: return AppColors.subscription;
+      case TodayActionType.refund: return AppColors.refund;
+      case TodayActionType.listing: return AppColors.listing;
     }
   }
 
   String get ctaLabel {
     switch (type) {
-      case _ActionType.demandForecast: return '상세 보기';
-      case _ActionType.subscriptionStart: return '청약하러 가기';
-      case _ActionType.subscriptionEnd: return '청약 마감 확인';
-      case _ActionType.refund: return '환불금 기록하기';
-      case _ActionType.listing: return '매도 기록하기';
+      case TodayActionType.demandForecast: return '상세 보기';
+      case TodayActionType.subscriptionStart: return '청약하러 가기';
+      case TodayActionType.subscriptionEnd: return '청약 마감 확인';
+      case TodayActionType.refund: return '환불금 기록하기';
+      case TodayActionType.listing: return '매도 기록하기';
     }
   }
 
-  /// CTA가 눌렸을 때 이동할 경로.
   String get ctaRoute {
     switch (type) {
-      case _ActionType.demandForecast:
+      case TodayActionType.demandForecast:
         return '/detail/${ipo.id}';
-      case _ActionType.subscriptionStart:
+      case TodayActionType.subscriptionStart:
         return '/subscription/new?ipoId=${Uri.encodeComponent(ipo.id)}';
-      case _ActionType.subscriptionEnd:
+      case TodayActionType.subscriptionEnd:
         return '/detail/${ipo.id}';
-      case _ActionType.refund:
+      case TodayActionType.refund:
         final id = sub?.id;
         return id != null
             ? '/subscription/edit/$id?focus=allocation'
             : '/detail/${ipo.id}';
-      case _ActionType.listing:
+      case TodayActionType.listing:
         final id = sub?.id;
         return id != null
             ? '/subscription/edit/$id?focus=sale'
@@ -208,7 +188,7 @@ class _TodayAction {
 }
 
 class _ActionCard extends ConsumerWidget {
-  final _TodayAction action;
+  final TodayAction action;
   const _ActionCard({required this.action});
 
   @override

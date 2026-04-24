@@ -6,6 +6,7 @@ import '../../core/constants/app_text_styles.dart';
 import '../../core/utils/currency_utils.dart';
 import '../../data/models/subscription.dart';
 import '../../data/repositories/subscription_repository.dart';
+import '../../domain/profit_summary.dart';
 
 class ProfitScreen extends ConsumerWidget {
   const ProfitScreen({super.key});
@@ -14,14 +15,9 @@ class ProfitScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final subs =
         ref.watch(subscriptionListProvider).valueOrNull ?? const <Subscription>[];
+    final summary = ProfitSummary.from(subs);
     final sold = subs.where((s) => s.status == SubscriptionStatus.sold).toList();
     final active = subs.where((s) => s.status != SubscriptionStatus.sold).toList();
-
-    final totalProfit = sold.fold(0, (sum, s) => sum + (s.profitAmount ?? 0));
-    final totalDeposit = subs.fold(0, (sum, s) => sum + (s.depositAmount ?? 0));
-    final winCount = sold.where((s) => (s.profitAmount ?? 0) > 0).length;
-    final winRate = sold.isEmpty ? 0.0 : (winCount / sold.length * 100);
-    final avgProfit = sold.isEmpty ? 0 : totalProfit ~/ sold.length;
 
     return Scaffold(
       appBar: AppBar(title: const Text('수익')),
@@ -29,14 +25,7 @@ class ProfitScreen extends ConsumerWidget {
         padding: const EdgeInsets.all(16),
         child: Column(
           children: [
-            _SummaryCard(
-              totalProfit: totalProfit,
-              totalDeposit: totalDeposit,
-              totalCount: subs.length,
-              avgProfit: avgProfit,
-              winRate: winRate,
-              soldCount: sold.length,
-            ),
+            _SummaryCard(summary: summary),
             if (active.isNotEmpty) ...[
               const SizedBox(height: 16),
               _ActiveSection(subs: active),
@@ -59,20 +48,8 @@ class ProfitScreen extends ConsumerWidget {
 }
 
 class _SummaryCard extends StatelessWidget {
-  final int totalProfit;
-  final int totalDeposit;
-  final int totalCount;
-  final int avgProfit;
-  final double winRate;
-  final int soldCount;
-  const _SummaryCard({
-    required this.totalProfit,
-    required this.totalDeposit,
-    required this.totalCount,
-    required this.avgProfit,
-    required this.winRate,
-    required this.soldCount,
-  });
+  final ProfitSummary summary;
+  const _SummaryCard({required this.summary});
 
   @override
   Widget build(BuildContext context) {
@@ -89,22 +66,21 @@ class _SummaryCard extends StatelessWidget {
           const Text('누적 수익', style: TextStyle(color: Colors.white70, fontSize: 13)),
           const SizedBox(height: 4),
           Text(
-            soldCount > 0
-                ? '${totalProfit >= 0 ? '+' : ''}${CurrencyUtils.format(totalProfit)}'
+            summary.soldCount > 0
+                ? '${summary.totalProfit >= 0 ? '+' : ''}${CurrencyUtils.format(summary.totalProfit)}'
                 : '아직 매도 기록이 없어요',
             style: const TextStyle(color: Colors.white, fontSize: 28, fontWeight: FontWeight.w700),
           ),
           const SizedBox(height: 16),
-          Row(
+          Wrap(
+            spacing: 20,
+            runSpacing: 8,
             children: [
-              _StatItem('총 투입금', CurrencyUtils.formatShort(totalDeposit)),
-              const SizedBox(width: 20),
-              _StatItem('참여 횟수', '$totalCount건'),
-              const SizedBox(width: 20),
-              if (soldCount > 0) ...[
-                _StatItem('승률', '${winRate.toStringAsFixed(0)}%'),
-                const SizedBox(width: 20),
-                _StatItem('건당 평균', CurrencyUtils.formatShort(avgProfit)),
+              _StatItem('총 투입금', CurrencyUtils.formatShort(summary.totalDeposit)),
+              _StatItem('참여 횟수', '${summary.totalCount}건'),
+              if (summary.soldCount > 0) ...[
+                _StatItem('승률', '${summary.winRate.toStringAsFixed(0)}%'),
+                _StatItem('건당 평균', CurrencyUtils.formatShort(summary.avgProfit)),
               ],
             ],
           ),

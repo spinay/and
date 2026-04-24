@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'app.dart';
 import 'core/services/notification_service.dart';
 import 'data/local/personal_db.dart';
@@ -31,10 +32,12 @@ Future<void> main() async {
     // DB 초기화 지연이나 에러 시 skip
   }
 
-  // 4. 로컬 알림 초기화 + 관심종목 일정 스케줄 — 실패해도 앱은 띄운다.
+  // 4. 로컬 알림 초기화 + 사용자 prefs 적용 + 관심종목 일정 스케줄.
+  //    실패해도 앱은 띄운다.
   try {
     await NotificationService.instance.init()
         .timeout(const Duration(seconds: 5));
+    await _applyNotificationPrefs();
     await _scheduleWatchlistNotifications(personalDb, catalog.cache)
         .timeout(const Duration(seconds: 5));
   } catch (_) {
@@ -50,6 +53,20 @@ Future<void> main() async {
       child: const IPOKeeperApp(),
     ),
   );
+}
+
+/// SharedPreferences에 저장된 알림 on/off를 NotificationService에 주입.
+Future<void> _applyNotificationPrefs() async {
+  try {
+    final prefs = await SharedPreferences.getInstance();
+    NotificationService.instance.applyPrefs(
+      subscription: prefs.getBool('notify.subscription') ?? true,
+      refund: prefs.getBool('notify.refund') ?? true,
+      listing: prefs.getBool('notify.listing') ?? true,
+    );
+  } catch (_) {
+    // 기본값(all true)으로 유지
+  }
 }
 
 /// 관심종목의 알림을 스케줄한다 (기존 알림 초기화 후 재등록).
